@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins-deployment
+  labels:
+    app: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      name: jenkins-deployment
+      labels:
+        app: jenkins
+        type: frontend
+    spec:
+      containers:
+      - name: jenkins-custom-non-root
+        image: shahmeerali/custom-jenkins:latest
+        ports:
+        - containerPort: 8080

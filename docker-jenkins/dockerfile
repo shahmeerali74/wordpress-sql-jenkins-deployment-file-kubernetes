@@ -1,0 +1,13 @@
+FROM jenkins/jenkins:lts
+USER root
+#RUN groupadd -g 1001 ali && useradd -r -u 1001 -g ali -d /var/jenkins_home -s /bin/bash jenkins
+
+RUN groupadd -g 1001 ali && \
+useradd -u 1001 -g ali -d /var/jenkins_home -s /bin/bash ali
+
+RUN chown -R ali:ali /var/jenkins_home
+
+USER ali
+
+
+
