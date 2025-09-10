@@ -1,0 +1,52 @@
+########################################
+# Stage 1: Download Jenkins WAR
+########################################
+FROM alpine:3.19 AS builder
+RUN apk add --no-cache curl
+ARG JENKINS_VERSION=2.452.1
+RUN curl -fsSL https://get.jenkins.io/war-stable/${JENKINS_VERSION}/jenkins.war \
+    -o /tmp/jenkins.war
+
+########################################
+# Stage 2: Build minimal JRE with jlink
+########################################
+FROM eclipse-temurin:17-jdk-alpine AS jre-builder
+
+RUN $JAVA_HOME/bin/jlink \
+    --add-modules java.base,java.compiler,java.desktop,java.instrument,java.management,java.naming,java.rmi,java.scripting,java.security.jgss,java.sql,java.xml,jdk.unsupported \
+    --strip-debug --no-man-pages --no-header-files \
+    --output /javaruntime
+
+########################################
+# Stage 3: Final Runtime - Jenkins
+########################################
+FROM alpine:3.19
+
+# Install tini + minimal fonts + bash
+RUN apk add --no-cache tini ttf-freefont bash
+
+# Copy minimal JRE
+COPY --from=jre-builder /javaruntime /opt/javaruntime
+ENV PATH="/opt/javaruntime/bin:$PATH"
+
+# Jenkins environment
+ENV JENKINS_HOME=/var/jenkins_home \
+    JENKINS_VERSION=2.452.1
+
+# Create non-root user 'ali'
+RUN addgroup -g 1001 ali && \
+    adduser -D -h $JENKINS_HOME -u 1001 -G ali ali && \
+    mkdir -p /usr/share/jenkins && \
+    chown -R ali:ali $JENKINS_HOME /usr/share/jenkins
+
+# Copy Jenkins WAR from builder stage
+COPY --from=builder /tmp/jenkins.war /usr/share/jenkins/jenkins.war
+
+# Run as non-root
+USER ali
+
+# Ports + entrypoint
+EXPOSE 8080
+ENV JENKINS_OPTS="--httpListenAddress=0.0.0.0"
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["java", "-jar", "/usr/share/jenkins/jenkins.war"]

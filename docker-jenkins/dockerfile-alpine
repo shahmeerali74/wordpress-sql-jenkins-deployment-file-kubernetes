@@ -1,0 +1,10 @@
+FROM jenkins/jenkins:2.60.3-alpine
+USER root
+
+# Create group and user in Alpine way
+RUN addgroup -g 1001 ali && \
+    adduser -D -u 1001 -G ali -h /var/jenkins_home -s /bin/sh ali && \
+    chown -R ali:ali /var/jenkins_home
+
+# Switch to non-root user
+USER ali

@@ -2,6 +2,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: jenkins-service
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-ip: "172.17.1.50" # to assign static ip
 spec:
   type: LoadBalancer
   selector:
