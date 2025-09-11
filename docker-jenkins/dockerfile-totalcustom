@@ -1,29 +1,23 @@
-########################################
 # Stage 1: Download Jenkins WAR
-########################################
 FROM alpine:3.19 AS builder
 RUN apk add --no-cache curl
 ARG JENKINS_VERSION=2.452.1
 RUN curl -fsSL https://get.jenkins.io/war-stable/${JENKINS_VERSION}/jenkins.war \
     -o /tmp/jenkins.war
 
-########################################
 # Stage 2: Build minimal JRE with jlink
-########################################
 FROM eclipse-temurin:17-jdk-alpine AS jre-builder
 
 RUN $JAVA_HOME/bin/jlink \
-    --add-modules java.base,java.compiler,java.desktop,java.instrument,java.management,java.naming,java.rmi,java.scripting,java.security.jgss,java.sql,java.xml,jdk.unsupported \
+    --add-modules java.base,java.compiler,java.desktop,java.instrument,java.management,java.naming,java.rmi,java.scripting,java.security.jgss,java.sql,java.xml,java.net.http,jdk.unsupported,jdk.crypto.ec \
     --strip-debug --no-man-pages --no-header-files \
     --output /javaruntime
-
-########################################
 # Stage 3: Final Runtime - Jenkins
-########################################
 FROM alpine:3.19
 
-# Install tini + minimal fonts + bash
-RUN apk add --no-cache tini ttf-freefont bash
+# Install tini + minimal fonts + bash + CA certificates
+RUN apk add --no-cache tini ttf-freefont bash ca-certificates && \
+    update-ca-certificates
 
 # Copy minimal JRE
 COPY --from=jre-builder /javaruntime /opt/javaruntime
@@ -31,7 +25,8 @@ ENV PATH="/opt/javaruntime/bin:$PATH"
 
 # Jenkins environment
 ENV JENKINS_HOME=/var/jenkins_home \
-    JENKINS_VERSION=2.452.1
+    JENKINS_VERSION=2.452.1 \
+    JAVA_TOOL_OPTIONS="-Dhttps.protocols=TLSv1.2"
 
 # Create non-root user 'ali'
 RUN addgroup -g 1001 ali && \
