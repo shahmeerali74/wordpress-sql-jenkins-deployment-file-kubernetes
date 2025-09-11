@@ -18,6 +18,6 @@ spec:
     spec:
       containers:
       - name: jenkins-custom-non-root
-        image: shahmeerali/custom-jenkins:latest
+        image: shahmeerali/slim-jenkins:v1
         ports:
         - containerPort: 8080

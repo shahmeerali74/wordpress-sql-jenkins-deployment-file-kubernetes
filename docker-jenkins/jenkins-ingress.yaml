@@ -2,11 +2,10 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: jenkins-ingress
-  annotations:
-    kubernetes.io/ingress.class: nginx
 spec:
+  ingressClassName: nginx
   rules:
-  - host: jenkins.example.com
+  - host: jenkins.shahmeer.com
     http:
       paths:
       - path: /
@@ -15,5 +14,5 @@ spec:
           service:
             name: jenkins-service
             port:
-              number: 8080
+              number: 80
 
